@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title></title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    </head>
+
+  <body>
+    <div id="app">
+      <header class="custom-topbar">
+        <div class="nippon-logo" aria-label="Nippon">
+          <img class="nippon-logo-n" src="./assets/n.png" alt="N">
+          <img
+            class="nippon-logo-ippon"
+            src="./assets/ippon.png"
+            alt=""
+            aria-hidden="true"
+            onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+          >
+          <span class="nippon-logo-ippon-fallback" aria-hidden="true">I</span>
+        </div>
+        <div class="window-controls-overlay" id="window-controls-overlay">
+          <button id="win-close" class="window-control-btn" aria-label="Close">✕</button>
+          <button id="win-maximize" class="window-control-btn-restore" aria-label="Maximize">□</button>
+          <button id="win-minimize" class="window-control-btn" aria-label="Minimize">🗕</button>
+        </div>
+        <div class="custom-topbar-drag"></div>
+      </header>
+
+      <div class="app-layout">
+        <aside class="activity-bar" aria-label="Activity Bar">
+          <button class="activity-item activity-home active" data-view="library" aria-label="Home"><i class="fa-solid fa-house"></i></button>
+          <button class="activity-item activity-search" data-view="search" aria-label="Search"><i class="fa-solid fa-magnifying-glass"></i></button>
+          <button class="activity-item activity-notifications" data-view="notifications" aria-label="Notifications"><i class="fa-solid fa-bell"></i></button>
+          <button class="activity-item activity-my-lists" data-view="favorites" aria-label="Favorites"><i class="fa-solid fa-heart"></i></button>
+          <button class="activity-item activity-top-rated" data-view="top-rated" aria-label="Top Rated"><i class="fa-solid fa-chart-bar"></i></button>
+          <button class="activity-item activity-downloads" data-view="downloads" aria-label="Downloads"><i class="fa-solid fa-download"></i></button>
+          <button class="activity-item activity-account" data-view="account" aria-label="Account"><i class="fa-regular fa-circle-user"></i></button>
+          <button class="activity-item activity-settings" data-view="settings" aria-label="Settings"><i class="fa-solid fa-gear"></i></button>
+          <button class="activity-item activity-about" data-view="about" aria-label="About"><i class="fa-solid fa-circle-info"></i></button>
+        </aside>
+
+        <main class="main-content">
+          <!-- Library view -->
+          <section id="view-library" class="view">
+            <div class="home-latest-header">
+              <h2>Latest Episodes</h2>
+            </div>
+            <div id="anime-grid" class="grid"></div>
+            <div id="home-loading" class="infinite-loading is-hidden" aria-live="polite" aria-hidden="true">
+              <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
+            </div>
+          </section>
+
+          <section id="view-search" class="view hidden">
+            <div class="search-view-shell">
+              <div class="search-input-row">
+                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                <input
+                  id="search-top-input"
+                  class="search-top-input"
+                  type="text"
+                  placeholder="Search anime..."
+                  aria-label="Search anime"
+                >
+              </div>
+
+              <div class="search-recommended-head">
+                <h2>Recommended Animes</h2>
+              </div>
+
+              <div id="search-recommended-grid" class="grid"></div>
+            </div>
+          </section>
+
+          <section id="view-notifications" class="view hidden utility-view">
+            <div class="utility-panel">
+              <h2>Notifications</h2>
+              <p>Your latest notifications will appear here.</p>
+            </div>
+          </section>
+
+          <section id="view-favorites" class="view hidden utility-view">
+            <div class="utility-panel">
+              <h2>Favorites</h2>
+              <p>Your favorite anime list will appear here.</p>
+            </div>
+          </section>
+
+          <section id="view-top-rated" class="view hidden">
+            <div class="top-rated-header">
+              <h2>Top Rated</h2>
+            </div>
+            <div id="top-rated-grid" class="grid"></div>
+            <div id="top-rated-loading" class="infinite-loading is-hidden" aria-live="polite" aria-hidden="true">
+              <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
+            </div>
+          </section>
+
+          <section id="view-downloads" class="view hidden utility-view">
+            <div class="utility-panel">
+              <h2>Downloads</h2>
+              <p>Your downloaded episodes and progress will appear here.</p>
+            </div>
+          </section>
+
+          <section id="view-settings" class="view hidden utility-view">
+            <div class="utility-panel">
+              <h2>Settings</h2>
+              <p>Settings panel is connected and ready.</p>
+            </div>
+          </section>
+
+          <section id="view-account" class="view hidden utility-view">
+            <div class="utility-panel">
+              <h2>Account</h2>
+              <p>Account details and profile actions will show here.</p>
+            </div>
+          </section>
+
+          <section id="view-about" class="view hidden utility-view">
+            <div class="utility-panel about-panel">
+              <h2>Nippon</h2>
+              <p>
+                Nippon is a dedicated desktop sanctuary for anime lovers. It provides a seamless way to
+                catalog your journey through Japanese animation, offering a refined space to curate your
+                personal library and manage your watchlist with absolute precision.
+              </p>
+
+              <div class="about-points">
+                <p><strong>Your Library, Your Rules:</strong> Keep a permanent, high-quality record of every series you've mastered.</p>
+                <p><strong>Fluid Discovery:</strong> Navigate through your collection with a clean, distraction-free interface.</p>
+                <p><strong>Total Privacy:</strong> Your data stays with you, stored locally for instant, offline access.</p>
+                <p><strong>Elegance in Motion:</strong> Designed for those who appreciate a sophisticated and focused viewing companion.</p>
+              </div>
+
+              <div class="about-connect">
+                <p>Connect with us:</p>
+                <a
+                  class="about-facebook-btn"
+                  href="https://www.facebook.com/denayee47"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <i class="fa-brands fa-facebook-f" aria-hidden="true"></i>
+                </a>
+              </div>
+            </div>
+          </section>
+
+          <!-- Anime detail view -->
+          <section id="view-detail" class="view hidden">
+            <button id="btn-back-detail" class="btn-back">← Back</button>
+            <div id="anime-detail"></div>
+            <div id="episodes-list" class="episodes-list"></div>
+          </section>
+
+          <!-- Video player view -->
+          <section id="view-player" class="view hidden">
+            <div class="player-container">
+              <video id="video-player" crossorigin="anonymous" playsinline></video>
+              <div id="custom-player-controls" class="custom-player-controls" role="group" aria-label="Video controls">
+                <div class="player-seek-row">
+                  <input id="player-seek" type="range" min="0" max="100" value="0" step="0.1" aria-label="Seek" />
+                </div>
+                <div class="player-controls-row">
+                  <div class="player-controls-left">
+                    <button id="player-rewind" class="player-control-btn" type="button" aria-label="Back 5 seconds">
+                      <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+                    </button>
+                    <button id="player-toggle" class="player-control-btn" type="button" aria-label="Play">
+                      <i class="fa-solid fa-play" aria-hidden="true"></i>
+                    </button>
+                    <button id="player-forward" class="player-control-btn" type="button" aria-label="Forward 5 seconds">
+                      <i class="fa-solid fa-rotate-right" aria-hidden="true"></i>
+                    </button>
+
+                    <div class="player-volume-wrap">
+                      <button id="player-mute" class="player-control-btn" type="button" aria-label="Mute">
+                        <i class="fa-solid fa-volume-high" aria-hidden="true"></i>
+                      </button>
+                      <input id="player-volume" class="player-volume" type="range" min="0" max="1" value="1" step="0.01" aria-label="Volume" />
+                    </div>
+
+                    <button id="player-prev-episode" class="player-control-btn player-episode-btn" type="button" aria-label="Previous episode">Prev Ep</button>
+                    <button id="player-next-episode" class="player-control-btn player-episode-btn" type="button" aria-label="Next episode">Next Ep</button>
+                    <span id="player-time" class="player-time">00:00 / 00:00</span>
+                  </div>
+
+                  <div class="player-controls-right">
+                    <div class="player-settings-wrap">
+                      <button id="player-settings-toggle" class="player-control-btn" type="button" aria-label="Player settings" aria-expanded="false">
+                        <i class="fa-solid fa-gear" aria-hidden="true"></i>
+                      </button>
+
+                      <div id="player-settings-menu" class="player-settings-menu is-hidden" aria-hidden="true">
+                        <div class="player-settings-section">
+                          <label for="player-quality">Quality</label>
+                          <select id="player-quality" class="player-settings-select" aria-label="Quality">
+                            <option value="auto" selected>Auto</option>
+                          </select>
+                        </div>
+
+                        <div class="player-settings-section">
+                          <label for="player-speed">Speed</label>
+                          <select id="player-speed" class="player-settings-select" aria-label="Playback speed">
+                            <option value="0.25">0.25x</option>
+                            <option value="0.5">0.5x</option>
+                            <option value="0.75">0.75x</option>
+                            <option value="1" selected>1x</option>
+                            <option value="1.25">1.25x</option>
+                            <option value="1.5">1.5x</option>
+                            <option value="1.75">1.75x</option>
+                            <option value="2">2x</option>
+                          </select>
+                        </div>
+
+                        <div class="player-settings-actions">
+                          <button id="player-copy-stream" type="button" class="player-settings-action">Copy stream URL</button>
+                          <button id="player-copy-episode" type="button" class="player-settings-action">Copy episode title</button>
+                          <button id="player-copy-time" type="button" class="player-settings-action">Copy current time</button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button id="player-fullscreen" class="player-control-btn" type="button" aria-label="Fullscreen">
+                      <i class="fa-solid fa-expand" aria-hidden="true"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div id="player-shortcut-hint" class="player-shortcut-hint is-hidden" aria-hidden="true">
+                <i id="player-shortcut-icon" class="fa-solid fa-play" aria-hidden="true"></i>
+                <span id="player-shortcut-text">Play</span>
+              </div>
+            </div>
+
+            <section class="player-meta-panel" aria-label="Episode details">
+              <div class="player-meta-head">
+                <h2 id="player-anime-title" class="player-anime-title">Anime</h2>
+                <p id="player-episode-title" class="player-episode-title">Episode</p>
+              </div>
+
+              <div class="player-rating-panel" aria-label="In-app episode rating">
+                <div class="player-rating-head">
+                  <p class="player-rating-label">Rate this episode</p>
+                  <p id="player-your-rating" class="player-your-rating">Your rating: --/10</p>
+                </div>
+
+                <div id="player-rate-panel" class="player-rate-panel" role="group" aria-label="Rate from 1 to 10">
+                  <button type="button" class="player-rate-btn" data-rating="1" aria-label="Rate 1 out of 10">1</button>
+                  <button type="button" class="player-rate-btn" data-rating="2" aria-label="Rate 2 out of 10">2</button>
+                  <button type="button" class="player-rate-btn" data-rating="3" aria-label="Rate 3 out of 10">3</button>
+                  <button type="button" class="player-rate-btn" data-rating="4" aria-label="Rate 4 out of 10">4</button>
+                  <button type="button" class="player-rate-btn" data-rating="5" aria-label="Rate 5 out of 10">5</button>
+                  <button type="button" class="player-rate-btn" data-rating="6" aria-label="Rate 6 out of 10">6</button>
+                  <button type="button" class="player-rate-btn" data-rating="7" aria-label="Rate 7 out of 10">7</button>
+                  <button type="button" class="player-rate-btn" data-rating="8" aria-label="Rate 8 out of 10">8</button>
+                  <button type="button" class="player-rate-btn" data-rating="9" aria-label="Rate 9 out of 10">9</button>
+                  <button type="button" class="player-rate-btn" data-rating="10" aria-label="Rate 10 out of 10">10</button>
+                </div>
+
+                <p id="player-app-rating" class="player-app-rating">App rating: --/10</p>
+              </div>
+            </section>
+
+            <section class="player-comments-panel" aria-label="Episode comments">
+              <div class="player-comments-head">
+                <h3>Comments</h3>
+                <span id="player-comments-count" class="player-comments-count">0</span>
+              </div>
+
+              <div class="player-comment-composer">
+                <div class="player-comment-input-wrap">
+                  <input
+                    id="player-comment-input"
+                    class="player-comment-input"
+                    type="text"
+                    maxlength="280"
+                    placeholder="Write a comment..."
+                    aria-label="Write a comment"
+                  >
+
+                  <div class="player-comment-actions">
+                    <button
+                      id="player-emoji-toggle"
+                      class="player-comment-action-btn"
+                      type="button"
+                      aria-label="Open emoji picker"
+                      aria-expanded="false"
+                    >😊</button>
+                    <button id="player-comment-send" class="player-comment-send" type="button">Send</button>
+                  </div>
+                </div>
+
+                <div id="player-emoji-picker" class="player-emoji-picker is-hidden" aria-hidden="true">
+                  <button type="button" class="player-emoji-btn" data-emoji="😀" aria-label="Smile">😀</button>
+                  <button type="button" class="player-emoji-btn" data-emoji="😍" aria-label="Love">😍</button>
+                  <button type="button" class="player-emoji-btn" data-emoji="🔥" aria-label="Fire">🔥</button>
+                  <button type="button" class="player-emoji-btn" data-emoji="👏" aria-label="Clap">👏</button>
+                  <button type="button" class="player-emoji-btn" data-emoji="😂" aria-label="Laugh">😂</button>
+                  <button type="button" class="player-emoji-btn" data-emoji="😭" aria-label="Cry">😭</button>
+                  <button type="button" class="player-emoji-btn" data-emoji="🤯" aria-label="Mind blown">🤯</button>
+                  <button type="button" class="player-emoji-btn" data-emoji="❤️" aria-label="Heart">❤️</button>
+                </div>
+              </div>
+
+              <ul id="player-comments-list" class="player-comments-list">
+                <li class="player-comment-empty">No comments yet.</li>
+              </ul>
+            </section>
+          </section>
+        </main>
+      </div>
+    </div>
+    <script type="module" src="./src/renderer.js"></script>
+  </body>
+
+</html>

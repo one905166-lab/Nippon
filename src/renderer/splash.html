@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    * {
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    img,
+    svg,
+    picture {
+      -webkit-user-drag: none;
+      user-drag: none;
+    }
+
+    body {
+      background: #0b0b0b;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: 'Segoe UI', sans-serif;
+      overflow: hidden;
+      -webkit-app-region: no-drag;
+      perspective: 900px;
+      isolation: isolate;
+    }
+
+    body::before {
+      content: '';
+      position: absolute;
+      inset: -25%;
+      background:
+        radial-gradient(circle at 50% 38%, rgba(255, 255, 255, 0.09), transparent 52%),
+        radial-gradient(circle at 50% 72%, rgba(255, 255, 255, 0.03), transparent 58%);
+      filter: blur(16px);
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .logo-stage {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 14px;
+      transform-style: preserve-3d;
+    }
+
+    .logo-stage::before {
+      content: '';
+      position: absolute;
+      left: 8px;
+      right: 8px;
+      bottom: -12px;
+      height: 18px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.02) 68%, transparent 100%);
+      filter: blur(8px);
+      opacity: 0;
+    }
+
+    .logo-mark {
+      width: 60px;
+      height: auto;
+      object-fit: contain;
+      opacity: 0;
+      transform-origin: center;
+      filter: drop-shadow(0 0 0 rgba(255, 255, 255, 0));
+      will-change: transform, filter, opacity;
+    }
+
+    .logo-word-wrap {
+      margin-left: 3px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      perspective: 700px;
+    }
+
+    .logo-word {
+      height: 50px;
+      width: auto;
+      opacity: 0;
+      clip-path: inset(0 100% 0 0 round 2px);
+      transform: translateX(-16px) scale(0.985);
+      filter: drop-shadow(0 0 0 rgba(255, 255, 255, 0));
+      will-change: transform, filter, opacity, clip-path;
+    }
+
+    .spinner {
+      display: block;
+      align-self: center;
+      margin: 28px auto 0;
+      font-size: 24px;
+      color: rgba(255, 255, 255, 0.68);
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    body.is-animate .logo-stage::before {
+      animation: shadowIn 0.95s cubic-bezier(0.22, 1, 0.36, 1) 0.32s forwards;
+    }
+
+    body.is-animate .logo-mark {
+      animation:
+        markIn 0.95s cubic-bezier(0.2, 0.8, 0.2, 1) forwards,
+        logoIdle 5.6s ease-in-out 1.15s infinite;
+    }
+
+    body.is-animate .logo-word {
+      animation:
+        wordIn 1.05s cubic-bezier(0.2, 0.8, 0.2, 1) 0.24s forwards,
+        logoIdle 5.6s ease-in-out 1.25s infinite;
+    }
+
+    body.is-animate .spinner {
+      opacity: 1;
+    }
+
+    @keyframes markIn {
+      0% {
+        opacity: 0;
+        transform: translate3d(0, 12px, 0) scale(0.9);
+        filter: blur(8px) brightness(0.75) drop-shadow(0 0 0 rgba(255, 255, 255, 0));
+      }
+      62% {
+        opacity: 1;
+        transform: translate3d(0, -2px, 0) scale(1.012);
+        filter: blur(0) brightness(1.05) drop-shadow(0 0 14px rgba(255, 255, 255, 0.18));
+      }
+      100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+        filter: blur(0) brightness(1) drop-shadow(0 0 10px rgba(255, 255, 255, 0.12));
+      }
+    }
+
+    @keyframes wordIn {
+      0% {
+        opacity: 0;
+        clip-path: inset(0 100% 0 0 round 2px);
+        transform: translateX(-16px) scale(0.985);
+        filter: blur(7px) brightness(0.8);
+      }
+      62% {
+        opacity: 1;
+        clip-path: inset(0 0 0 0 round 2px);
+        transform: translateX(0) scale(1.008);
+        filter: blur(0) brightness(1.05);
+      }
+      100% {
+        opacity: 1;
+        clip-path: inset(0 0 0 0 round 2px);
+        transform: translateX(0) scale(1);
+        filter: blur(0) brightness(1);
+      }
+    }
+
+    @keyframes logoIdle {
+      0%,
+      100% { transform: translate3d(0, 0, 0) scale(1); }
+      50% { transform: translate3d(0, -1px, 0) scale(1.004); }
+    }
+
+    @keyframes shadowIn {
+      from { opacity: 0; transform: scaleX(0.65); }
+      to { opacity: 0.5; transform: scaleX(1); }
+    }
+
+  </style>
+</head>
+<body>
+  <div class="logo-stage" aria-label="Nippon">
+    <img class="logo-mark" src="./assets/n.png" alt="N">
+    <div class="logo-word-wrap">
+      <img class="logo-word" src="./assets/ippon.png" alt="ippon">
+    </div>
+  </div>
+  <i class="fa-solid fa-spinner fa-spin spinner" aria-hidden="true"></i>
+
+  <script>
+    (() => {
+      let hasStarted = false
+
+      const startSplashAnimation = () => {
+        if (hasStarted) return
+        hasStarted = true
+
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            document.body.classList.add('is-animate')
+          }, 140)
+        })
+      }
+
+      const handleVisibility = () => {
+        if (document.visibilityState === 'visible') {
+          startSplashAnimation()
+        }
+      }
+
+      document.addEventListener('visibilitychange', handleVisibility)
+      window.addEventListener('load', handleVisibility)
+      handleVisibility()
+    })()
+  </script>
+</body>
+</html>

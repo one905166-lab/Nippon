@@ -1,0 +1,20 @@
+{
+  "animes": [
+    {
+      "title": "Sousou no Frieren",
+      "add": [
+        "1|1080p|https://your-cdn.example.com/frieren-e1-1080p.m3u8",
+        "1|720p|https://your-cdn.example.com/frieren-e1-720p.m3u8"
+      ]
+    },
+    {
+      "title": "Oshi no Ko",
+      "eps": {
+        "1": {
+          "1080p": "https://f51.workupload.com/download/rfCsAYAyC5X",
+          "720p": "https://your-cdn.example.com/oshinoko-e1-720p.m3u8"
+        }
+      }
+    }
+  ]
+}

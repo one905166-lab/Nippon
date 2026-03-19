@@ -1,0 +1,63 @@
+{
+  "animes": [
+    {
+      "title": "Sousou no Frieren",
+      "add": [
+        "1|1080p|https://your-cdn.example.com/frieren-e1-1080p.m3u8",
+        "1|720p|https://your-cdn.example.com/frieren-e1-720p.m3u8"
+      ],
+      "id": 52991,
+      "titre_en": "Frieren: Beyond Journey's End",
+      "titre_jp": "葬送のフリーレン",
+      "titre_ar": "Frieren: Beyond Journey's End",
+      "synopsis_en": "During their decade-long quest to defeat the Demon King, the members of the hero's party—Himmel himself, the priest Heiter, the dwarf warrior Eisen, and the elven mage Frieren—forge bonds through adventures and battles, creating unforgettable precious memories for most of them.\n\nHowever, the time that Frieren spends with her comrades is equivalent to merely a fraction of her life, which has lasted over a thousand years. When the party disbands after their victory, Frieren casually returns to her \"usual\" routine of collecting spells across the continent. Due to her different sense of time, she seemingly holds no strong feelings toward the experiences she went through.\n\nAs the years pass, Frieren gradually realizes how her days in the hero's party truly impacted her. Witnessing the deaths of two of her former companions, Frieren begins to regret having taken their presence for granted; she vows to better understand humans and create real personal connections. Although the story of that once memorable journey has long ended, a new tale is about to begin.\n\n[Written by MAL Rewrite]",
+      "poster_url": "https://myanimelist.net/images/anime/1015/138006l.jpg",
+      "format": "TV",
+      "statut": "Finished Airing",
+      "studio": "Madhouse",
+      "season": "fall",
+      "year": 2023,
+      "jour_sortie": "Fridays",
+      "note_imdb": 9.28,
+      "age_rating": "PG-13 - Teens 13 or older",
+      "total_episodes": 28,
+      "duree_episode": 24,
+      "genres": [
+        "Adventure",
+        "Drama",
+        "Fantasy"
+      ],
+      "episodes": []
+    },
+    {
+      "title": "Oshi no Ko",
+      "eps": {
+        "1": {
+          "1080p": "https://f51.workupload.com/download/rfCsAYAyC5X",
+          "720p": "https://your-cdn.example.com/oshinoko-e1-720p.m3u8"
+        }
+      },
+      "id": 52034,
+      "titre_en": "[Oshi No Ko]",
+      "titre_jp": "【推しの子】",
+      "titre_ar": "[Oshi No Ko]",
+      "synopsis_en": "In the entertainment world, celebrities often show exaggerated versions of themselves to the public, concealing their true thoughts and struggles beneath elaborate lies. Fans buy into these fabrications, showering their idols with undying love and support, until something breaks the illusion. Sixteen-year-old rising star Ai Hoshino of pop idol group B Komachi has the world captivated; however, when she announces a hiatus due to health concerns, the news causes many to become worried.\n\nAs a huge fan of Ai, gynecologist Gorou Amemiya cheers her on from his countryside medical practice, wishing he could meet her in person one day. His wish comes true when Ai shows up at his hospital—not sick, but pregnant with twins! While the doctor promises Ai to safely deliver her children, he wonders if this encounter with the idol will forever change the nature of his relationship with her.\n\n[Written by MAL Rewrite]",
+      "poster_url": "https://myanimelist.net/images/anime/1812/134736l.jpg",
+      "format": "TV",
+      "statut": "Finished Airing",
+      "studio": "Doga Kobo",
+      "season": "spring",
+      "year": 2023,
+      "jour_sortie": "Wednesdays",
+      "note_imdb": 8.54,
+      "age_rating": "PG-13 - Teens 13 or older",
+      "total_episodes": 11,
+      "duree_episode": 30,
+      "genres": [
+        "Award Winning",
+        "Drama"
+      ],
+      "episodes": []
+    }
+  ]
+}
