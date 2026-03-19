@@ -56,6 +56,7 @@ let homeLatestEpisodes = []
 let topRatedAnimes = []
 let topRatedCatalogAnimes = []
 let searchRecommendedAnimes = []
+let searchCurrentResultsAnimes = []
 let detailReturnView = 'library'
 let homeHasMore = false
 let homeIsLoadingMore = false
@@ -85,6 +86,8 @@ const SEARCH_INPUT_DEBOUNCE_MS = 200
 const SEARCH_FUZZY_LIMIT = 32
 const SEARCH_FUZZY_MIN_SCORE = 0.32
 const SEARCH_DB_DIRECT_LIMIT = 180
+const SCRAPER_SEARCH_LIMIT = 24
+const SCRAPER_DEFAULT_SOURCE_ID = 'witanime'
 const SEARCH_DB_POOL_MAX_ITEMS = 1200
 const SEARCH_DB_POOL_CACHE_TTL_MS = 45000
 const COMMONS_EPISODE_SOURCES_CACHE_MAX = 72
@@ -93,6 +96,8 @@ const MAX_ANIME_GENRES = 5
 const PLAYER_CONTROLS_IDLE_MS = 1800
 const PLAYER_RATING_STORAGE_KEY = 'nippon-player-ratings-v1'
 const PLAYER_COMMENTS_STORAGE_KEY = 'nippon-player-comments-v1'
+const DEFAULT_POSTER_PLACEHOLDER =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='450' viewBox='0 0 300 450'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%231b1f26'/%3E%3Cstop offset='100%25' stop-color='%23111216'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='300' height='450' fill='url(%23g)'/%3E%3Ctext x='150' y='225' text-anchor='middle' dominant-baseline='middle' font-family='Segoe UI,Arial,sans-serif' font-size='24' fill='%238792a3'%3ENo Poster%3C/text%3E%3C/svg%3E"
 const PLAYER_RATING_SEED = {
   'ep-1': { avg: 8.3, votes: 248 },
   'ep-2': { avg: 7.6, votes: 139 },
@@ -124,6 +129,17 @@ function cleanEnglishText(value, fallback = '') {
   if (value === null || value === undefined) return fallback
   const cleaned = String(value).replace(ARABIC_CHAR_REGEX, '').replace(/\s+/g, ' ').trim()
   return cleaned || fallback
+}
+
+function cleanDisplayText(value, fallback = '') {
+  if (value === null || value === undefined) return fallback
+  const cleaned = String(value).replace(/\s+/g, ' ').trim()
+  return cleaned || fallback
+}
+
+function getAnimePosterUrl(anime) {
+  const posterUrl = cleanDisplayText(anime?.poster_url, '')
+  return posterUrl || DEFAULT_POSTER_PLACEHOLDER
 }
 
 function truncateText(value, maxLength = MAX_ANIME_SYNOPSIS_CHARS) {
@@ -301,12 +317,14 @@ function formatRelativeUploadTime(value) {
 function buildHomeAnimeEntry(value = {}) {
   const rank = Number(value.rank)
   const ratedBy = Number(value.rated_by)
+  const englishTitle = cleanEnglishText(value.titre_en || value.titre_jp || value.animeTitle, '')
+  const fallbackTitle = cleanDisplayText(value.titre_en || value.titre_jp || value.animeTitle, 'Untitled')
 
   return {
     id: value.id,
     rank: Number.isFinite(rank) && rank > 0 ? Math.trunc(rank) : null,
     rated_by: Number.isFinite(ratedBy) && ratedBy > 0 ? Math.trunc(ratedBy) : null,
-    titre_en: cleanEnglishText(value.titre_en || value.titre_jp || value.animeTitle, 'Untitled'),
+    titre_en: englishTitle || fallbackTitle,
     titre_jp: cleanEnglishText(value.titre_jp || '', ''),
     poster_url: value.poster_url || '',
     note_imdb: value.note_imdb ? String(value.note_imdb) : '',
@@ -315,7 +333,10 @@ function buildHomeAnimeEntry(value = {}) {
     statut: cleanEnglishText(value.statut || '', ''),
     total_episodes: value.total_episodes || null,
     year: value.year || '',
-    genres: normalizeAnimeGenres(value.genres)
+    genres: normalizeAnimeGenres(value.genres),
+    sourceType: cleanDisplayText(value.sourceType || value.source_type || 'db', 'db'),
+    sourceId: cleanDisplayText(value.sourceId || value.source_id || '', ''),
+    scraperAnimeId: cleanDisplayText(value.scraperAnimeId || value.scraper_anime_id || '', '')
   }
 }
 
@@ -337,7 +358,10 @@ function normalizeAnimeEntry(anime = {}) {
     statut: anime.statut || anime.status,
     total_episodes: anime.total_episodes || anime.episodes,
     year: anime.year || anime.aired?.prop?.from?.year,
-    genres: anime.genres
+    genres: anime.genres,
+    sourceType: anime.sourceType || anime.source_type,
+    sourceId: anime.sourceId || anime.source_id,
+    scraperAnimeId: anime.scraperAnimeId || anime.scraper_anime_id
   })
 }
 
@@ -561,6 +585,45 @@ async function hydrateEpisodeSources(episode) {
 
   if (episode.sources?.auto && Object.keys(episode.sources).length > 1) {
     return
+  }
+
+  if (episode.sourceType === 'scraper' && window.api?.scraper?.resolveStream) {
+    try {
+      const payload = await window.api.scraper.resolveStream(
+        episode.scraperEpisodeId || episode.id,
+        episode.sourceId || SCRAPER_DEFAULT_SOURCE_ID
+      )
+
+      const sources = {}
+      if (Array.isArray(payload?.streams)) {
+        payload.streams.forEach((stream) => {
+          const streamUrl = cleanDisplayText(stream?.url || '', '')
+          if (!streamUrl) return
+
+          const qualityKey = normalizeScraperQualityKey(stream?.quality || stream?.label || '')
+          if (qualityKey && !sources[qualityKey]) {
+            sources[qualityKey] = streamUrl
+          }
+
+          if (!sources.auto) {
+            sources.auto = streamUrl
+          }
+        })
+      }
+
+      const fallbackStreamUrl = cleanDisplayText(payload?.streamUrl || '', '')
+      if (!sources.auto && fallbackStreamUrl) {
+        sources.auto = fallbackStreamUrl
+      }
+
+      if (Object.keys(sources).length) {
+        episode.sources = sources
+        episode.src = sources.auto || Object.values(sources)[0] || ''
+      }
+      return
+    } catch (error) {
+      console.warn('Failed to resolve scraper episode stream:', error)
+    }
   }
 
   if (episode.commonsTitle) {
@@ -970,17 +1033,18 @@ function updateEpisodeNavState() {
   }
 }
 
-function buildEpisodeQueueForAnime(anime) {
-  const animeId = anime?.id
-  if (animeId === null || animeId === undefined) return []
-  return episodeQueueCache.get(String(animeId)) || []
-}
-
 function normalizeServerQualityKey(server = {}) {
   const qualityLabel = cleanEnglishText(server.qualite || '', '').toLowerCase()
   const numericMatch = qualityLabel.match(/(\d{3,4})/)
   if (numericMatch) return numericMatch[1]
   return qualityLabel.includes('auto') ? 'auto' : ''
+}
+
+function normalizeScraperQualityKey(value) {
+  const qualityLabel = cleanDisplayText(value || '', '').toLowerCase()
+  const numericMatch = qualityLabel.match(/(\d{3,4})/)
+  if (numericMatch) return numericMatch[1]
+  return ''
 }
 
 function mapDbEpisodesToQueue(animeId, episodes = []) {
@@ -1023,6 +1087,37 @@ function mapDbEpisodesToQueue(animeId, episodes = []) {
     .filter(Boolean)
 }
 
+function mapScraperEpisodesToQueue(anime, episodes = []) {
+  const animeId = anime?.id
+  const sourceId = anime?.sourceId || SCRAPER_DEFAULT_SOURCE_ID
+
+  return (episodes || [])
+    .map((episode, index) => {
+      const orderRaw = Number(episode?.number)
+      const order = Number.isFinite(orderRaw) && orderRaw > 0 ? Math.trunc(orderRaw) : index + 1
+      const rawTitle = cleanDisplayText(episode?.title, '')
+      const title = cleanEnglishText(rawTitle, rawTitle || `Episode ${order}`)
+      const episodeId = cleanDisplayText(episode?.episodeId || episode?.id, '')
+
+      if (!episodeId) return null
+
+      return {
+        id: `${animeId}-${episodeId}`,
+        scraperEpisodeId: episodeId,
+        sourceType: 'scraper',
+        sourceId,
+        templateId: `scraper-${sourceId}-${animeId}-${order}`,
+        order,
+        title,
+        displayTitle: `Episode ${order} · ${title}`,
+        src: '',
+        sources: {},
+        comments: []
+      }
+    })
+    .filter(Boolean)
+}
+
 async function ensureEpisodeQueueForAnime(anime) {
   const animeId = anime?.id
   if (animeId === null || animeId === undefined) return []
@@ -1033,8 +1128,27 @@ async function ensureEpisodeQueueForAnime(anime) {
   }
 
   if (!window.api?.db?.getEpisodes) {
-    episodeQueueCache.set(cacheKey, [])
-    return []
+    if (anime?.sourceType !== 'scraper') {
+      episodeQueueCache.set(cacheKey, [])
+      return []
+    }
+  }
+
+  if (anime?.sourceType === 'scraper' && window.api?.scraper?.getEpisodes) {
+    try {
+      const payload = await window.api.scraper.getEpisodes(
+        anime.scraperAnimeId || anime.id,
+        anime.sourceId || SCRAPER_DEFAULT_SOURCE_ID
+      )
+      const episodes = Array.isArray(payload?.episodes) ? payload.episodes : []
+      const queue = mapScraperEpisodesToQueue(anime, episodes)
+      episodeQueueCache.set(cacheKey, queue)
+      return queue
+    } catch (error) {
+      console.warn('Failed to load episodes from scraper source:', error)
+      episodeQueueCache.set(cacheKey, [])
+      return []
+    }
   }
 
   try {
@@ -1269,11 +1383,15 @@ async function playEpisodeByIndex(index, options = {}) {
 
   const episode = playerEpisodeQueue[index]
   updatePlayerMetaPanel(episode)
+  await hydrateEpisodeSources(episode)
   syncPlayerQualityOptions(episode)
   const source =
     getEpisodeSourceByQuality(episode, playerSelectedQuality) ||
     getEpisodeSourceByQuality(episode, 'auto')
-  if (!source) return
+  if (!source) {
+    showPlayerShortcutHint('fa-solid fa-circle-exclamation', 'No playable stream', { size: 'compact' })
+    return
+  }
   const animeTitle = cleanEnglishText(playerEpisodeAnime?.titre_en || playerEpisodeAnime?.titre_jp, 'Anime')
 
   void hydrateEpisodeSources(episode).then(() => {
@@ -1731,6 +1849,10 @@ async function copyTextToClipboard(text) {
 function findAnimeById(animeId) {
   const targetId = String(animeId)
 
+  for (const anime of searchCurrentResultsAnimes) {
+    if (String(anime?.id) === targetId) return anime
+  }
+
   for (const anime of searchRecommendedAnimes) {
     if (String(anime?.id) === targetId) return anime
   }
@@ -1873,13 +1995,13 @@ function renderAnimeGrid({
       card.classList.add('no-entry-animation')
     }
 
-    const title = cleanEnglishText(anime.titre_en || anime.titre_jp, 'Untitled')
-    const poster = anime.poster_url || ''
+    const title = cleanDisplayText(anime.titre_en || anime.titre_jp, 'Untitled')
+    const poster = getAnimePosterUrl(anime)
 
     card.innerHTML = `
-      <img loading="lazy" decoding="async" src="${poster}" alt="${title}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22300%22><rect fill=%22%23333%22 width=%22200%22 height=%22300%22/><text x=%2250%25%22 y=%2250%25%22 fill=%22%23999%22 text-anchor=%22middle%22 dy=%22.3em%22No Poster</text></svg>'">
+      <img loading="lazy" decoding="async" src="${poster}" alt="${escapeHtml(title)}" onerror="this.onerror=null;this.src='${DEFAULT_POSTER_PLACEHOLDER}'">
       <div class="card-info">
-        <p class="card-title">${title}</p>
+        <p class="card-title">${escapeHtml(title)}</p>
         ${anime.note_imdb ? `<span class="card-score">⭐ ${anime.note_imdb}</span>` : ''}
       </div>
     `
@@ -2141,7 +2263,11 @@ function filterAnimesByQuery(animes, queryText) {
   const query = normalizeSearchText(queryText)
   if (!query) return animes || []
 
-  return (animes || []).filter((anime) => normalizeSearchText(getAnimeSearchBlob(anime)).includes(query))
+  return (animes || []).filter((anime) => {
+    const searchBlob = normalizeSearchText(getAnimeSearchBlob(anime))
+    const rawTitle = normalizeSearchText(cleanDisplayText(anime?.titre_en || anime?.titre_jp, ''))
+    return searchBlob.includes(query) || rawTitle.includes(query)
+  })
 }
 
 function renderSearchRecommendedGrid(animes, emptyMessage = 'No recommended anime available.') {
@@ -2167,6 +2293,43 @@ function getSearchFallbackPool() {
   )
 }
 
+function mapScraperAnimeToEntry(item = {}, sourceId = SCRAPER_DEFAULT_SOURCE_ID) {
+  const id = cleanDisplayText(item?.id || item?.sourceAnimeId || item?.slug, '')
+  if (!id) return null
+
+  const rawTitle = cleanDisplayText(item?.title || item?.slug, 'Untitled')
+  const title = cleanEnglishText(rawTitle, rawTitle)
+
+  return buildHomeAnimeEntry({
+    id,
+    scraperAnimeId: cleanDisplayText(item?.sourceAnimeId || id, id),
+    sourceType: 'scraper',
+    sourceId,
+    titre_en: title,
+    poster_url: cleanDisplayText(item?.coverImage || '', ''),
+    synopsis_en: '',
+    format: 'Web',
+    genres: []
+  })
+}
+
+async function searchScraperAnimes(queryText, sourceId = SCRAPER_DEFAULT_SOURCE_ID) {
+  if (!window.api?.scraper?.searchAnime) return []
+
+  try {
+    const payload = await window.api.scraper.searchAnime(queryText, sourceId)
+    const items = Array.isArray(payload?.items) ? payload.items : []
+
+    return items
+      .slice(0, SCRAPER_SEARCH_LIMIT)
+      .map((item) => mapScraperAnimeToEntry(item, sourceId))
+      .filter(Boolean)
+  } catch (error) {
+    console.warn('Scraper search failed:', error)
+    return []
+  }
+}
+
 async function loadSearchRecommendations(forceReload = false) {
   if (!searchRecommendedGridEl) return
 
@@ -2177,6 +2340,7 @@ async function loadSearchRecommendations(forceReload = false) {
       return
     }
 
+    searchCurrentResultsAnimes = []
     setSearchRecommendedLabel('Recommended animes')
     renderSearchRecommendedGrid(searchRecommendedAnimes)
     return
@@ -2198,6 +2362,7 @@ async function loadSearchRecommendations(forceReload = false) {
     uniqueAnimeById(animes),
     HOME_LIMIT
   )
+  searchCurrentResultsAnimes = []
   setSearchRecommendedLabel('Recommended animes')
   renderSearchRecommendedGrid(searchRecommendedAnimes)
 }
@@ -2208,6 +2373,7 @@ async function runSearchQuery(rawQuery) {
   const query = cleanEnglishText(rawQuery, '')
   if (!query) {
     clearSearchDbPoolCache()
+    searchCurrentResultsAnimes = []
     setSearchRecommendedLabel('Recommended animes')
     renderSearchRecommendedGrid(searchRecommendedAnimes)
     return
@@ -2218,8 +2384,10 @@ async function runSearchQuery(rawQuery) {
 
   let dbMatches = []
   let dbPool = []
+  let scraperMatches = []
 
   const dbPoolPromise = getSearchDbPoolAnimes()
+  const scraperPromise = searchScraperAnimes(query)
 
   if (window.api?.db?.getAnimesLite) {
     try {
@@ -2243,12 +2411,23 @@ async function runSearchQuery(rawQuery) {
     dbPool = []
   }
 
+  try {
+    scraperMatches = await scraperPromise
+  } catch {
+    scraperMatches = []
+  }
+
   if (requestId !== searchQueryRequestId) return
 
   const fallbackPool = getSearchFallbackPool()
-  const searchablePool = uniqueAnimeById([...(dbPool || []), ...fallbackPool, ...(dbMatches || [])])
+  const searchablePool = uniqueAnimeById([
+    ...(scraperMatches || []),
+    ...(dbPool || []),
+    ...fallbackPool,
+    ...(dbMatches || [])
+  ])
   const localMatches = filterAnimesByQuery(searchablePool, query)
-  const directMatches = uniqueAnimeById([...(dbMatches || []), ...localMatches])
+  const directMatches = uniqueAnimeById([...(scraperMatches || []), ...(dbMatches || []), ...localMatches])
   const fuzzyMatches = getFuzzyAnimeMatches(searchablePool, query)
 
   const mergedMatches = directMatches.length
@@ -2256,17 +2435,20 @@ async function runSearchQuery(rawQuery) {
     : fuzzyMatches
 
   if (!mergedMatches.length) {
+    searchCurrentResultsAnimes = []
     setSearchRecommendedLabel('No results')
     renderSearchRecommendedGrid([], `No anime found for "${escapeHtml(query)}".`)
     return
   }
 
   if (!directMatches.length && fuzzyMatches.length) {
+    searchCurrentResultsAnimes = fuzzyMatches
     setSearchRecommendedLabel('Closest matches')
     renderSearchRecommendedGrid(fuzzyMatches, `No exact match for "${escapeHtml(query)}". Showing closest titles.`)
     return
   }
 
+  searchCurrentResultsAnimes = mergedMatches
   setSearchRecommendedLabel(`${mergedMatches.length} result${mergedMatches.length > 1 ? 's' : ''}`)
   renderSearchRecommendedGrid(mergedMatches)
 }
@@ -2585,7 +2767,8 @@ async function openAnimeDetail(animeId, sourceView = 'library') {
   if (!anime) return
   detailReturnView = sourceView
 
-  const title = cleanEnglishText(anime.titre_en || anime.titre_jp, 'Untitled')
+  const title = cleanDisplayText(anime.titre_en || anime.titre_jp, 'Untitled')
+  const posterUrl = getAnimePosterUrl(anime)
   const synopsis = await getAnimeDetailSynopsis(anime.id, anime.synopsis_en || '')
   const synopsisPreview = getSynopsisPreviewState(synopsis)
   const synopsisMarkup = synopsisPreview.fullText
@@ -2608,10 +2791,10 @@ async function openAnimeDetail(animeId, sourceView = 'library') {
 
   animeDetailEl.innerHTML = `
     <div class="detail-header">
-      <img class="detail-poster" src="${anime.poster_url || ''}" alt="${title}">
+      <img class="detail-poster" src="${posterUrl}" alt="${escapeHtml(title)}" onerror="this.onerror=null;this.src='${DEFAULT_POSTER_PLACEHOLDER}'">
       <div class="detail-meta">
         <div class="detail-title-row">
-          <h1>${title}</h1>
+          <h1>${escapeHtml(title)}</h1>
           <button type="button" id="detail-copy-title" class="detail-copy-toggle" aria-label="Copy title" title="Copy title" aria-pressed="false"><i class="fa-regular fa-copy" aria-hidden="true"></i></button>
         </div>
         ${synopsisMarkup}

@@ -136,3 +136,30 @@ $ NIPPON_DB_PATH=/absolute/path/to/your.db npm run dev
 ```
 
 In packaged builds, DB is loaded from `resources/database` automatically.
+
+### Arabic Scraper Bridge (Builder Checklist)
+
+This project now includes the Electron bridge for scraping with Arabic-only source policy.
+
+Files:
+
+- `src/main/scraper/arabic-sources.js` (allowed Arabic sources registry)
+- `src/main/scraper/scraper-service.js` (search/episodes/stream service contract)
+- `src/main/index.js` (IPC handlers + header interceptor)
+- `src/preload/index.js` (renderer API bridge)
+
+Renderer API:
+
+- `window.api.scraper.listSources()`
+- `window.api.scraper.searchAnime(query, sourceId)`
+- `window.api.scraper.getEpisodes(animeId, sourceId)`
+- `window.api.scraper.resolveStream(episodeId, sourceId)`
+
+Arabic-only guard:
+
+- Only sources listed in `src/main/scraper/arabic-sources.js` are accepted.
+- Outgoing requests to those hosts get `Referer` and `User-Agent` injected via Electron `session.defaultSession.webRequest.onBeforeSendHeaders`.
+
+Builder note:
+
+`src/main/scraper/scraper-service.js` currently defines stable function contracts and Arabic-source validation. Fill in the provider-specific extraction logic inside that service.

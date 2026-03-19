@@ -13,6 +13,15 @@ const api = {
     getLatestEpisodes: (limit) => ipcRenderer.invoke('db:getLatestEpisodes', limit),
     getSubtitles: (episodeId) => ipcRenderer.invoke('db:getSubtitles', episodeId)
   },
+  scraper: {
+    listSources: () => ipcRenderer.invoke('scraper:listSources'),
+    searchAnime: (query, sourceId = 'witanime') =>
+      ipcRenderer.invoke('scraper:searchAnime', { query, sourceId }),
+    getEpisodes: (animeId, sourceId = 'witanime') =>
+      ipcRenderer.invoke('scraper:getEpisodes', { animeId, sourceId }),
+    resolveStream: (episodeId, sourceId = 'witanime') =>
+      ipcRenderer.invoke('scraper:resolveStream', { episodeId, sourceId })
+  },
   window: {
     minimize: () => ipcRenderer.send('window:minimize'),
     maximizeToggle: () => ipcRenderer.send('window:maximize-toggle'),

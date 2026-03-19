@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, nativeImage, screen } from 'electron'
+import { app, BrowserWindow, ipcMain, nativeImage, screen, session } from 'electron'
 import fs from 'fs'
 import path from 'path'
 import { is } from '@electron-toolkit/utils'
@@ -14,11 +14,14 @@ import {
   isDatabaseOpen,
   getActiveDatabasePath
 } from './database.js'
+import { ScraperService } from './scraper/scraper-service.js'
+import { findArabicSourceByUrl } from './scraper/arabic-sources.js'
 
 const MIN_SPLASH_SHOW_MS = 4000
 const KEEP_SPLASH_OPEN_IN_DEV = false
 const SPLASH_TO_MAIN_FADE_MS = 520
 const splashCloseAllowance = new WeakSet()
+const scraperService = new ScraperService()
 
 function resolveFirstExistingPath(candidates = []) {
   for (const candidate of candidates) {
@@ -192,6 +195,25 @@ function syncWindowShapeWithState(window) {
   applyRoundedWindowShape(window, radius)
 }
 
+function setupArabicStreamHeaderInterceptor() {
+  session.defaultSession.webRequest.onBeforeSendHeaders({ urls: ['*://*/*'] }, (details, callback) => {
+    const source = findArabicSourceByUrl(details.url)
+    if (!source) {
+      callback({ requestHeaders: details.requestHeaders })
+      return
+    }
+
+    const requestHeaders = {
+      ...details.requestHeaders,
+      Referer: source.referer,
+      Origin: source.baseUrl,
+      'User-Agent': details.requestHeaders['User-Agent'] || source.userAgent
+    }
+
+    callback({ requestHeaders })
+  })
+}
+
 function setupIpcHandlers() {
   ipcMain.handle('db:getAnimes', (_, search) => getAnimes(search))
   ipcMain.handle('db:getAnimesLite', (_, search, limit) => getAnimesLite(search, limit))
@@ -201,6 +223,12 @@ function setupIpcHandlers() {
   ipcMain.handle('db:getSubtitles', (_, episodeId) => getSubtitles(episodeId))
   ipcMain.handle('db:isOpen', () => isDatabaseOpen())
   ipcMain.handle('db:getSavedPath', () => getActiveDatabasePath())
+  ipcMain.handle('scraper:listSources', () => scraperService.listSources())
+  ipcMain.handle('scraper:searchAnime', async (_, payload) => scraperService.searchAnime(payload || {}))
+  ipcMain.handle('scraper:getEpisodes', async (_, payload) => scraperService.getEpisodes(payload || {}))
+  ipcMain.handle('scraper:resolveStream', async (_, payload) =>
+    scraperService.resolveStream(payload || {})
+  )
   ipcMain.handle('system:getPlatform', () => process.platform)
 
   ipcMain.on('window:minimize', (event) => {
@@ -385,6 +413,7 @@ app.whenReady().then(() => {
   }
 
   setupIpcHandlers()
+  setupArabicStreamHeaderInterceptor()
 
   const envDbPathRaw = String(process.env.NIPPON_DB_PATH || '').trim()
   const envDbPath = envDbPathRaw ? path.resolve(envDbPathRaw) : ''
